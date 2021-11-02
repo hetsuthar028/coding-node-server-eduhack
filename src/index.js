@@ -65,7 +65,7 @@ app.post(`${path['runCode']}`, async (req, res)=> {
 
         const jobId = job["_id"];
         console.log("Job @RunCode - Just before add to queue", job);
-        addJobToQueue({jobId, questionId});
+        addJobToQueue({jobId, questionId, userEmail});
         res.status(201).json({success: true, jobId});
     } catch(err){
         return res.status(500).json({success: false, err: JSON.stringify(err)})

@@ -4,10 +4,11 @@ const NUM_WORKERS = 5;
 const { executeFile } = require('./executeJS');
 const { executeQuestionFile } = require('./executeQuestionFile');
 const Job = require('../models/Job');
+const CodeSolution = require('../models/CodeSolution');
 
 jobQueue.process(NUM_WORKERS, async ({data}) => {
     console.log(data);
-    const {id: jobId, questionId} = data;
+    const {id: jobId, questionId, userEmail} = data;
     // const job = await Job.find({_id: data.jobId});
     const job = await Job.findById(data.jobId);
     console.log("JOB - ", job);
@@ -26,6 +27,12 @@ jobQueue.process(NUM_WORKERS, async ({data}) => {
         } else {
             console.log("Exec Question File", data.questionId, job.filePath)
             output = await executeQuestionFile(job.filePath, data.questionId);
+            try{
+                let codeSolution = await new CodeSolution({questionID: questionId, jobID: data.jobId, userEmail: data.userEmail, timestamp: new Date(), output: output}).save();
+            } catch(err){
+                console.log("Error creating code solution document", err);
+            }
+            
         }
 
         console.log("Job Completed", output)
