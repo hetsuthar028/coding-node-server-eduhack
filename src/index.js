@@ -1,15 +1,15 @@
 const express = require('express');
-const { executeFile } = require('./executeJS');
 const { generateFile } = require('./generateFile');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const Job = require('../models/Job');
+const { addJobToQueue } = require('./jobQueue');
 require('dotenv');
 
 const PORT = process.env.SERVER_PORT || 10200;
 let path = {
-    "run": '/api/code/server/node/run',
-    "statusCheck": '/api/code/server/status/:jobId'
+    "runCode": '/api/code/server/node/run',
+    "statusCheck": '/api/code/server/status/:jobId',
 }
 
 mongoose.connect('mongodb://localhost/eduhack-compiler',   {
@@ -53,9 +53,9 @@ app.get(`${path['statusCheck']}`, async (req, res) => {
     }
 })
 
-app.post(`${path['run']}`, async (req, res)=> {
-    let { language = 'js', content } = req.body;
-
+app.post(`${path['runCode']}`, async (req, res)=> {
+    let { language = 'js', content, userEmail, questionId } = req.body;
+    console.log("Question ID 2", questionId)
     let job;
 
     try {
@@ -64,33 +64,17 @@ app.post(`${path['run']}`, async (req, res)=> {
         job = await new Job({language, filePath}).save();
 
         const jobId = job["_id"];
-        console.log(job);
+        console.log("Job @RunCode - Just before add to queue", job);
+        addJobToQueue({jobId, questionId});
         res.status(201).json({success: true, jobId});
-        
-        job["startedAt"] = new Date();
-        const output = await executeFile(filePath)
-        console.log("Job Completed", output)
-        job["completedAt"] = new Date();
-        job["status"] = "success";
-        job["output"] = output;
-
-        await job.save();
-
-        console.log("Complete", job);
-        // return res.status(200).send({filePath, output});
     } catch(err){
-        job["completedAt"] = new Date();
-        job["status"] = "error";
-        job["output"] = JSON.stringify(err);
-
-        await job.save();
-        console.log("ERR", err)
-        console.log("ERROR:::", job);
-        // return res.status(500).json({err})
+        return res.status(500).json({success: false, err: JSON.stringify(err)})
     }
+        
 
     // return res.status(200).send({success: true, output: 'received in node server'});
 });
+
 
 
 app.listen(PORT, () => {
