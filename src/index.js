@@ -12,7 +12,7 @@ let path = {
     "statusCheck": '/api/code/server/status/:jobId',
 }
 
-mongoose.connect('mongodb://localhost/eduhack-compiler',   {
+mongoose.connect('mongodb://localhost/eduhack-coding-service',   {
     useNewUrlParser: true,
     useUnifiedTopology: true
 }, (err) => {
